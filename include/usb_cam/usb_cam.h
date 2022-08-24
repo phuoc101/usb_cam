@@ -86,6 +86,9 @@ class UsbCam {
   // enables/disable auto focus
   void set_auto_focus(int value);
 
+  // get formats of camera
+  void get_formats();
+
   // Set video device parameters
   void set_v4l_parameter(const std::string& param, int value);
   void set_v4l_parameter(const std::string& param, const std::string& value);

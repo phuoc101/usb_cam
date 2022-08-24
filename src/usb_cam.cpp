@@ -363,6 +363,44 @@ UsbCam::~UsbCam()
   shutdown();
 }
 
+void UsbCam::get_formats()  // std::vector<usb_cam::msg::Format>& formats)
+{
+  ROS_INFO("This Cameras Supported Formats:\n");
+  struct v4l2_fmtdesc fmt;
+  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  fmt.index = 0;
+  for (fmt.index = 0; xioctl(fd_, VIDIOC_ENUM_FMT, &fmt) == 0; ++fmt.index) {
+    ROS_INFO_STREAM(
+      fmt.description << " [Index: " << fmt.index << ", Type: " << fmt.type <<
+        ", Flags: " << fmt.flags << ", PixelFormat: " << std::hex << fmt.pixelformat << "]");
+
+    struct v4l2_frmsizeenum size;
+    size.index = 0;
+    size.pixel_format = fmt.pixelformat;
+
+    for (size.index = 0; xioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &size) == 0; ++size.index) {
+      ROS_INFO_STREAM(
+        "  width: " << size.discrete.width << " x height: " << size.discrete.height);
+      struct v4l2_frmivalenum interval;
+      interval.index = 0;
+      interval.pixel_format = size.pixel_format;
+      interval.width = size.discrete.width;
+      interval.height = size.discrete.height;
+      for (interval.index = 0; xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &interval) == 0;
+        ++interval.index)
+      {
+        if (interval.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
+          ROS_INFO_STREAM(
+            "  " << interval.type << " " << interval.discrete.numerator << " / " <<
+              interval.discrete.denominator);
+        } else {
+          ROS_INFO("other type");
+        }
+      }  // interval loop
+    }  // size loop
+  }  // fmt loop
+}
+
 int UsbCam::init_mjpeg_decoder(int image_width, int image_height)
 {
   avcodec_register_all();
